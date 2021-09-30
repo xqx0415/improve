@@ -1,5 +1,6 @@
 package com.example.myhencoderdemo
 
+import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import androidx.appcompat.app.AppCompatActivity
@@ -27,12 +28,19 @@ class MainActivity : AppCompatActivity() {
         }*/
 
         //使用属性动画，循环翻转View
-        /*val view = findViewById<CameraView>(R.id.id_ruler)
-        val objectAnimator = ObjectAnimator.ofFloat(view,"degrees",0f,360f)
-        objectAnimator.duration = 1000
-        objectAnimator.repeatMode = ValueAnimator.RESTART
-        objectAnimator.repeatCount = ValueAnimator.INFINITE
-        objectAnimator.start()*/
+        val view = findViewById<CameraView>(R.id.id_ruler)
+        val topRotateXAnimator = ObjectAnimator.ofFloat(view,"topRotateX",0f,-60f).apply {
+            duration = 1000
+        }
+        val degreesAnimator = ObjectAnimator.ofFloat(view,"degrees",0f,270f).apply {
+            duration = 1000
+        }
+        val bottomRotateXAnimator = ObjectAnimator.ofFloat(view,"bottomRotateX",0f,60f).apply {
+            duration = 1000
+        }
+        val animatorSet = AnimatorSet()
+        animatorSet.playSequentially(bottomRotateXAnimator,degreesAnimator,topRotateXAnimator)
+        animatorSet.start()
 
     }
 

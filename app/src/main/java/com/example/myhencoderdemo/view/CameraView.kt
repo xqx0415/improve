@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.graphics.withSave
 import com.example.myhencoderdemo.R
 import com.example.myhencoderdemo.dp
 
@@ -15,10 +16,10 @@ class CameraView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private val avatarSize = 150.dp
     private var avatarPaddingLeft = 0f
     private var avatarPaddingTop = 0f
-    
+
     private val camera = Camera()
 
-    private var degrees = 270f
+    private var degrees = 0f
         set(value) {
             if (field != value){
                 field = value
@@ -26,8 +27,24 @@ class CameraView(context: Context, attrs: AttributeSet) : View(context, attrs) {
             }
         }
 
+    private var topRotateX = 0f
+        set(value) {
+            if (field != value){
+                field = value
+                invalidate()
+            }
+        }
+
+    private var bottomRotateX = 0f
+        set(value) {
+            if (field != value){
+                field = value
+                invalidate()
+            }
+        }
+
+
     init {
-        camera.rotateX(30f)
         camera.setLocation(0f,0f,-7 * resources.displayMetrics.density)
     }
 
@@ -41,27 +58,34 @@ class CameraView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         super.onDraw(canvas)
 
         //画上半部分
-        canvas.save()
-        canvas.translate(avatarPaddingLeft + avatarSize/2, avatarPaddingTop + avatarSize/2)
-        canvas.rotate(-degrees)
-        canvas.clipRect(-avatarSize,-avatarSize,avatarSize,0f)
-        //斜角度切，就是旋转画布
-        canvas.rotate(degrees)
-        canvas.translate(-(avatarPaddingLeft + avatarSize/2), -(avatarPaddingTop + avatarSize/2))
-        canvas.drawBitmap(getAvatar(avatarSize.toInt()), avatarPaddingLeft, avatarPaddingTop, paint)
-        canvas.restore()
+        canvas.withSave {
+            canvas.translate(avatarPaddingLeft + avatarSize/2, avatarPaddingTop + avatarSize/2)
+            canvas.rotate(-degrees)
+            camera.save()
+            camera.rotateX(topRotateX)
+            camera.applyToCanvas(canvas)
+            camera.restore()
+            canvas.clipRect(-avatarSize,-avatarSize,avatarSize,0f)
+            //斜角度切，就是旋转画布
+            canvas.rotate(degrees)
+            canvas.translate(-(avatarPaddingLeft + avatarSize/2), -(avatarPaddingTop + avatarSize/2))
+            canvas.drawBitmap(getAvatar(avatarSize.toInt()), avatarPaddingLeft, avatarPaddingTop, paint)
+        }
 
         //画下半部分
-        canvas.save()
-        canvas.translate(avatarPaddingLeft + avatarSize/2, avatarPaddingTop + avatarSize/2)
-        canvas.rotate(-degrees)
-        camera.applyToCanvas(canvas)
-        canvas.clipRect(-avatarSize,0f,avatarSize,avatarSize)
-        //斜角度切，就是旋转画布
-        canvas.rotate(degrees)
-        canvas.translate(-(avatarPaddingLeft + avatarSize/2), -(avatarPaddingTop + avatarSize/2))
-        canvas.drawBitmap(getAvatar(avatarSize.toInt()), avatarPaddingLeft, avatarPaddingTop, paint)
-        canvas.restore()
+        canvas.withSave {
+            canvas.translate(avatarPaddingLeft + avatarSize/2, avatarPaddingTop + avatarSize/2)
+            canvas.rotate(-degrees)
+            camera.save()
+            camera.rotateX(bottomRotateX)
+            camera.applyToCanvas(canvas)
+            camera.restore()
+            canvas.clipRect(-avatarSize,0f,avatarSize,avatarSize)
+            //斜角度切，就是旋转画布
+            canvas.rotate(degrees)
+            canvas.translate(-(avatarPaddingLeft + avatarSize/2), -(avatarPaddingTop + avatarSize/2))
+            canvas.drawBitmap(getAvatar(avatarSize.toInt()), avatarPaddingLeft, avatarPaddingTop, paint)
+        }
 
     }
 
