@@ -8,6 +8,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.OverScroller
 import androidx.core.view.GestureDetectorCompat
@@ -39,26 +40,27 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
     private var bigScale = 0f
 
     //大图系数
-    private val bigFactor = 2.8f
+    private val bigFactor = 1.8f
 
     //是否为放大状态
     private var isBig = false
 
-    //放缩系数，作为属性动画
-    private var scaleFraction = 0f
+    //当前放缩比，作为属性动画
+    private var currentScale = 0f
         set(value) {
             field = value
             invalidate()
         }
 
     //放缩属性动画
-    private val scaleAnimator by lazy {
-        ObjectAnimator.ofFloat(this@ScaleImageView, "scaleFraction", 0f, 1f)
-    }
+    private val scaleAnimator =
+        ObjectAnimator.ofFloat(this@ScaleImageView, "currentScale", smallScale, bigScale)
 
     private val gestureDetectorCompat = GestureDetectorCompat(context, XieGestureDetector())
     private val overScroller = OverScroller(context)
     private val flingRunner = FlingRunner()
+
+    private val scaleGestureDetector = ScaleGestureDetector(context, XieScaleDetector())
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
@@ -74,21 +76,27 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
             smallScale = width / bitmap.width.toFloat()
             bigScale = height / bitmap.height * bigFactor
         }
+        currentScale = smallScale
+        scaleAnimator.setFloatValues(smallScale, bigScale)
 
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         //滑动大图需要做的偏移
-        canvas.translate(offsetX * scaleFraction, offsetY * scaleFraction)//3
-        val scale = smallScale + (bigScale - smallScale) * scaleFraction
-        canvas.scale(scale, scale, width / 2f, height / 2f)//2
+        val localScale = (currentScale - smallScale) / (bigScale - smallScale)
+        canvas.translate(offsetX * localScale, offsetY * localScale)//3
+        canvas.scale(currentScale, currentScale, width / 2f, height / 2f)//2
         canvas.drawBitmap(bitmap, originalOffsetX, originalOffsetY, paint)//1
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         //手势代理
-        return gestureDetectorCompat.onTouchEvent(event)
+        scaleGestureDetector.onTouchEvent(event)
+        if (!scaleGestureDetector.isInProgress) {
+            return gestureDetectorCompat.onTouchEvent(event)
+        }
+        return true
     }
 
     inner class XieGestureDetector : GestureDetector.SimpleOnGestureListener() {
@@ -109,6 +117,13 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
                 fixOffset()
                 scaleAnimator.start()
             } else {
+                //如果条件成立，表示已经进行了双指缩放，那么双击的时候，就要从已经缩放的大小恢复到最小
+                if (currentScale != smallScale) {
+                    val tempAnimator = scaleAnimator.clone()
+                    tempAnimator.setFloatValues(smallScale,currentScale)
+                    tempAnimator.reverse()
+                    return true
+                }
                 scaleAnimator.reverse()
             }
             return true
@@ -147,8 +162,7 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
                     (-(bitmap.width * bigScale - width) / 2).toInt(),
                     ((bitmap.width * bigScale - width) / 2).toInt(),
                     (-(bitmap.height * bigScale - height) / 2).toInt(),
-                    ((bitmap.height * bigScale - height) / 2).toInt(),
-                    40.dp.toInt(), 40.dp.toInt()
+                    ((bitmap.height * bigScale - height) / 2).toInt()
                 )
                 ViewCompat.postOnAnimation(this@ScaleImageView, flingRunner)
             }
@@ -158,16 +172,10 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
 
     //修正偏移，不能超过图片的上下左右两边
     private fun fixOffset() {
-
         offsetX = offsetX.coerceAtLeast(-(bitmap.width * bigScale - width) / 2)
             .coerceAtMost((bitmap.width * bigScale - width) / 2)
         offsetY = offsetY.coerceAtLeast(-(bitmap.height * bigScale - height) / 2)
             .coerceAtMost((bitmap.height * bigScale - height) / 2)
-
-//        offsetX = min(offsetX, (bitmap.width * bigScale - width) / 2)
-//        offsetX = max(offsetX, -(bitmap.width * bigScale - width) / 2)
-//        offsetY = min(offsetY, (bitmap.height * bigScale - height) / 2)
-//        offsetY = max(offsetY, -(bitmap.height * bigScale - height) / 2)
     }
 
     //快滑响应
@@ -180,6 +188,36 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
                 ViewCompat.postOnAnimation(this@ScaleImageView, this)
             }
         }
+    }
+
+    inner class XieScaleDetector : ScaleGestureDetector.OnScaleGestureListener {
+        override fun onScale(detector: ScaleGestureDetector?): Boolean {
+            val tempScale = currentScale * scaleGestureDetector.scaleFactor
+            //如果条件成立，就不消费上次的放缩比，使得不管手指放大或者缩小多少，都要重新恢复到临界值才能重新进行缩放
+            if (tempScale < smallScale || tempScale > bigScale) {
+                return false
+            } else {
+                currentScale *= scaleGestureDetector.scaleFactor
+            }
+//            isBig = currentScale == bigScale
+            //返回值是true， scaleGestureDetector.scaleFactor 表示 是上次的放缩比跟此次放缩比的值
+            //false， 表示 初始值和当前的
+            return true
+        }
+
+        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+            if (!isBig) {
+                offsetX = (width / 2 - detector.focusX) * bigScale
+                offsetY = (height / 2 - detector.focusY) * bigScale
+                fixOffset()
+            }
+            return true
+        }
+
+        override fun onScaleEnd(detector: ScaleGestureDetector?) {
+            isBig = bitmap.width * currentScale > width || bitmap.height * currentScale > height
+        }
 
     }
+
 }
