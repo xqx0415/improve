@@ -55,6 +55,7 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
 
     private val gestureDetectorCompat = GestureDetectorCompat(context, XieGestureDetector())
     private val overScroller = OverScroller(context)
+    private val flingRunner = FlingRunner()
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
@@ -146,7 +147,7 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
                     ((bitmap.height * bigScale - height) / 2).toInt(),
                     40.dp.toInt(), 40.dp.toInt()
                 )
-                ViewCompat.postOnAnimation(this@ScaleImageView,FlingRunner())
+                ViewCompat.postOnAnimation(this@ScaleImageView,flingRunner)
             }
             return true
         }
