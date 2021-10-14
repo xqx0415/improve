@@ -24,23 +24,31 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
 
     private val bitmap = getAvatar(imageSize.toInt())
 
+    //图片滑动偏移
     private var offsetX = 0f
     private var offsetY = 0f
+    //图片原始偏移
     private var originalOffsetX = 0f
     private var originalOffsetY = 0f
 
+    //小图放缩比
     private var smallScale = 0f
+    //大图放缩比
     private var bigScale = 0f
+    //大图系数
     private val bigFactor = 2.8f
 
+    //是否为放大状态
     private var isBig = false
 
+    //放缩系数，作为属性动画
     private var scaleFraction = 0f
         set(value) {
             field = value
             invalidate()
         }
 
+    //放缩属性动画
     private val scaleAnimator by lazy {
         ObjectAnimator.ofFloat(this@ScaleImageView, "scaleFraction", 0f, 1f)
     }
@@ -67,23 +75,26 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
-        canvas.translate(offsetX * scaleFraction, offsetY * scaleFraction)
+        //滑动大图需要做的偏移
+        canvas.translate(offsetX * scaleFraction, offsetY * scaleFraction)//3
         val scale = smallScale + (bigScale - smallScale) * scaleFraction
-        canvas.scale(scale, scale, width / 2f, height / 2f)
-        canvas.drawBitmap(bitmap, originalOffsetX, originalOffsetY, paint)
+        canvas.scale(scale, scale, width / 2f, height / 2f)//2
+        canvas.drawBitmap(bitmap, originalOffsetX, originalOffsetY, paint)//1
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
+        //手势代理
         return gestureDetectorCompat.onTouchEvent(event)
     }
 
     inner class XieGestureDetector : GestureDetector.SimpleOnGestureListener() {
+        //始终返回true，因为要拦截事件
         override fun onDown(e: MotionEvent?): Boolean {
             return true
         }
 
         override fun onDoubleTap(e: MotionEvent): Boolean {
+            //双击，图片放大或缩小
             isBig = !isBig
             if (isBig) {
                 //双击后，以点击的点为中心放大
@@ -122,7 +133,7 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
             velocityX: Float,
             velocityY: Float
         ): Boolean {
-            //放大图片情况下，
+            //放大图片情况下，计算快滑
             if (isBig){
                 overScroller.fling(
                     offsetX.toInt(),
@@ -141,6 +152,7 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
         }
     }
 
+    //修正偏移，不能超过图片的上下左右两边
     private fun fixOffset() {
         offsetX = min(offsetX, (bitmap.width * bigScale - width) / 2)
         offsetX = max(offsetX, -(bitmap.width * bigScale - width) / 2)
@@ -148,6 +160,7 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
         offsetY = max(offsetY, -(bitmap.height * bigScale - height) / 2)
     }
 
+    //快滑响应
     inner class FlingRunner : Runnable{
         override fun run() {
             if (overScroller.computeScrollOffset()){
