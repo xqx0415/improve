@@ -1,7 +1,10 @@
 package com.example.myhencoderdemo
 
 import android.content.res.Resources
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.TypedValue
+import android.view.View
 
 
 val Int.dp
@@ -13,3 +16,13 @@ val Float.dp
         this,
         Resources.getSystem().displayMetrics
     )
+
+fun View.getAvatar(width:Int):Bitmap{
+    val option = BitmapFactory.Options()
+    option.inJustDecodeBounds = true
+    BitmapFactory.decodeResource(resources,R.drawable.avatar,option)
+    option.inJustDecodeBounds = false
+    option.inDensity = option.outWidth
+    option.inTargetDensity = width
+    return BitmapFactory.decodeResource(resources,R.drawable.avatar,option)
+}

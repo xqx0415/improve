@@ -1,8 +1,6 @@
 package com.example.myhencoderdemo
 
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
+import android.animation.*
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
@@ -27,7 +25,7 @@ class MainActivity : AppCompatActivity() {
             rulerView.setMark(mark)
         }*/
 
-        //使用属性动画，循环翻转View
+        /*//使用属性动画，循环翻转View
         val view = findViewById<CameraView>(R.id.id_ruler)
         val topRotateXAnimator = ObjectAnimator.ofFloat(view,"topRotateX",0f,-60f).apply {
             duration = 1000
@@ -40,7 +38,7 @@ class MainActivity : AppCompatActivity() {
         }
         val animatorSet = AnimatorSet()
         animatorSet.playSequentially(bottomRotateXAnimator,degreesAnimator,topRotateXAnimator)
-        animatorSet.start()
+        animatorSet.start()*/
 
     }
 
