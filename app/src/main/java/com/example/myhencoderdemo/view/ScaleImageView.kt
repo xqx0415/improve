@@ -27,14 +27,17 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
     //图片滑动偏移
     private var offsetX = 0f
     private var offsetY = 0f
+
     //图片原始偏移
     private var originalOffsetX = 0f
     private var originalOffsetY = 0f
 
     //小图放缩比
     private var smallScale = 0f
+
     //大图放缩比
     private var bigScale = 0f
+
     //大图系数
     private val bigFactor = 2.8f
 
@@ -135,7 +138,7 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
             velocityY: Float
         ): Boolean {
             //放大图片情况下，计算快滑
-            if (isBig){
+            if (isBig) {
                 overScroller.fling(
                     offsetX.toInt(),
                     offsetY.toInt(),
@@ -147,7 +150,7 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
                     ((bitmap.height * bigScale - height) / 2).toInt(),
                     40.dp.toInt(), 40.dp.toInt()
                 )
-                ViewCompat.postOnAnimation(this@ScaleImageView,flingRunner)
+                ViewCompat.postOnAnimation(this@ScaleImageView, flingRunner)
             }
             return true
         }
@@ -155,20 +158,26 @@ class ScaleImageView(context: Context?, attrs: AttributeSet?) : View(context, at
 
     //修正偏移，不能超过图片的上下左右两边
     private fun fixOffset() {
-        offsetX = min(offsetX, (bitmap.width * bigScale - width) / 2)
-        offsetX = max(offsetX, -(bitmap.width * bigScale - width) / 2)
-        offsetY = min(offsetY, (bitmap.height * bigScale - height) / 2)
-        offsetY = max(offsetY, -(bitmap.height * bigScale - height) / 2)
+
+        offsetX = offsetX.coerceAtLeast(-(bitmap.width * bigScale - width) / 2)
+            .coerceAtMost((bitmap.width * bigScale - width) / 2)
+        offsetY = offsetY.coerceAtLeast(-(bitmap.height * bigScale - height) / 2)
+            .coerceAtMost((bitmap.height * bigScale - height) / 2)
+
+//        offsetX = min(offsetX, (bitmap.width * bigScale - width) / 2)
+//        offsetX = max(offsetX, -(bitmap.width * bigScale - width) / 2)
+//        offsetY = min(offsetY, (bitmap.height * bigScale - height) / 2)
+//        offsetY = max(offsetY, -(bitmap.height * bigScale - height) / 2)
     }
 
     //快滑响应
-    inner class FlingRunner : Runnable{
+    inner class FlingRunner : Runnable {
         override fun run() {
-            if (overScroller.computeScrollOffset()){
+            if (overScroller.computeScrollOffset()) {
                 offsetX = overScroller.currX.toFloat()
                 offsetY = overScroller.currY.toFloat()
                 invalidate()
-                ViewCompat.postOnAnimation(this@ScaleImageView,this)
+                ViewCompat.postOnAnimation(this@ScaleImageView, this)
             }
         }
 
