@@ -9,6 +9,9 @@ import android.view.View
 import com.example.myhencoderdemo.dp
 import com.example.myhencoderdemo.getAvatar
 
+/**
+ * 哪只手指最后按下屏幕，即获取移动焦点
+ */
 class MultiTouchView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
 
     private val bitmap = getAvatar(200.dp.toInt())
@@ -79,8 +82,8 @@ class MultiTouchView(context: Context?, attrs: AttributeSet?) : View(context, at
                 }
                 currentPointerId = event.getPointerId(upIndex)
                 // 将按下的坐标重新更新为最新这根可以操作的手指上，避免换手指时会有跳动的情况出现
-                downX = event.getX(event.findPointerIndex(currentPointerId))
-                downY = event.getY(event.findPointerIndex(currentPointerId))
+                downX = event.getX(upIndex)
+                downY = event.getY(upIndex)
                 originalOffsetX = offsetX
                 originalOffsetY = offsetY
             }
